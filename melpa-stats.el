@@ -55,6 +55,29 @@
 
 ;;;; Commands
 
+(defun melpa-stats/author-maintainer-package-counts ()
+  "Return list of people by number of packages authored or maintained."
+  (interactive)
+  (let* ((people (ht))
+         (counts))
+    (cl-loop for package in (melpa-stats/packages)
+             for authors = (-flatten (seq-into (melpa-stats/package-field '(props authors) package) 'list))
+             when authors
+             do (cl-loop for author in authors
+                         do (push package (gethash author people))))
+    (cl-loop for package in (melpa-stats/packages)
+             for maintainer = (melpa-stats/package-field '(props maintainer) package)
+             when maintainer
+             do (push package (gethash maintainer people)))
+    (setf counts (->> (cl-loop for person being the hash-keys of people
+                               using (hash-values packages)
+                               do (setf packages (-uniq packages))
+                               collect (cons person (length packages)))
+                      (-sort (-on #'> #'cdr))))
+    (if (called-interactively-p 'any)
+        (pp-display-expression counts "*MELPA Authors and Maintainers*")
+      counts)))
+
 (defun melpa-stats/author-package-counts ()
   "Return list of authors by package count.
 Interactively, display with `pp-display-expression'."
@@ -81,49 +104,7 @@ Interactively, display with `pp-display-expression'."
         (pp-display-expression counts "*MELPA Maintainers*")
       counts)))
 
-(defun melpa-stats/author-maintainer-package-counts ()
-  "List people by number of packages authored or maintained."
-  (interactive)
-  (let* ((people (ht))
-         (counts))
-    (cl-loop for package in (melpa-stats/packages)
-             for authors = (-flatten (seq-into (melpa-stats/package-field '(props authors) package) 'list))
-             when authors
-             do (cl-loop for author in authors
-                         do (push package (gethash author people))))
-    (cl-loop for package in (melpa-stats/packages)
-             for maintainer = (melpa-stats/package-field '(props maintainer) package)
-             when maintainer
-             do (push package (gethash maintainer people)))
-    (setf counts (->> (cl-loop for person being the hash-keys of people
-                               using (hash-values packages)
-                               do (setf packages (-uniq packages))
-                               collect (cons person (length packages)))
-                      (-sort (-on #'> #'cdr))))
-    (if (called-interactively-p 'any)
-        (pp-display-expression counts "*MELPA Authors and Maintainers*")
-      counts)))
-
 ;;;; Functions
-
-(defun melpa-stats/packages-by-author ()
-  "Return alist of packages by author."
-  (cl-loop with people = (ht)
-           for package in (melpa-stats/packages)
-           for authors = (-flatten (seq-into (melpa-stats/package-field '(props authors) package) 'list))
-           when authors
-           do (cl-loop for author in authors
-                       do (push package (gethash author people)))
-           finally return (ht->alist people)))
-
-(defun melpa-stats/packages-by-maintainer ()
-  "Return alist of packages by maintainer."
-  (cl-loop with people = (ht)
-           for package in (melpa-stats/packages)
-           for maintainer = (melpa-stats/package-field '(props maintainer) package)
-           when maintainer
-           do (push package (gethash maintainer people))
-           finally return (ht->alist people)))
 
 (cl-defun melpa-stats/select-packages (&key authors maintainers urls (test-fn #'string-match))
   "Return packages matching AUTHORS, MAINTAINERS, or URLs.
@@ -158,25 +139,6 @@ package is returned."
                                                    thereis (funcall test-fn u it))))))))
     (-uniq (append author-packages maintainer-packages url-packages))))
 
-(defun melpa-stats/packages (&optional refresh)
-  "Return MELPA package data, read from archive.json."
-  (when (or refresh (not melpa-stats/packages))
-    (setf melpa-stats/packages (melpa-stats/retrieve-json melpa-stats/archive-json-url)))
-  melpa-stats/packages)
-
-(defun melpa-stats/downloads (&optional refresh)
-  "Return MELPA package data, read from download_counts.json"
-  (when (or refresh (not melpa-stats/downloads))
-    (setf melpa-stats/downloads (melpa-stats/retrieve-json melpa-stats/downloads-json-url)))
-  melpa-stats/downloads)
-
-(defun melpa-stats/retrieve-json (url)
-  "Return parsed JSON object from URL."
-  (with-current-buffer (url-retrieve-synchronously url)
-    (re-search-forward "\n\n")
-    (prog1 (json-read)
-      (kill-buffer))))
-
 (defun melpa-stats/count (fn list)
   "Return alist of elements of LIST with counts, sorted with `>'.
 LIST is, first, grouped with `seq-group-by' by applying FN to
@@ -186,6 +148,12 @@ each element."
        (seq-group-by fn)
        (--map (cons (car it) (length (cdr it))))
        (-sort (-on #'> #'cdr))))
+
+(defun melpa-stats/downloads (&optional refresh)
+  "Return MELPA package data, read from download_counts.json"
+  (when (or refresh (not melpa-stats/downloads))
+    (setf melpa-stats/downloads (melpa-stats/retrieve-json melpa-stats/downloads-json-url)))
+  melpa-stats/downloads)
 
 (defun melpa-stats/package-field (field package)
   "Return value of FIELD in PACKAGE data.
@@ -204,6 +172,38 @@ PACKAGE should be a package data list as returned by
      (downloads . 431))"
   (a-list 'version (melpa-stats/package-field '(ver) package)
           'downloads (a-get (melpa-stats/downloads) (car package))))
+
+(defun melpa-stats/packages (&optional refresh)
+  "Return MELPA package data, read from archive.json."
+  (when (or refresh (not melpa-stats/packages))
+    (setf melpa-stats/packages (melpa-stats/retrieve-json melpa-stats/archive-json-url)))
+  melpa-stats/packages)
+
+(defun melpa-stats/packages-by-author ()
+  "Return alist of packages by author."
+  (cl-loop with people = (ht)
+           for package in (melpa-stats/packages)
+           for authors = (-flatten (seq-into (melpa-stats/package-field '(props authors) package) 'list))
+           when authors
+           do (cl-loop for author in authors
+                       do (push package (gethash author people)))
+           finally return (ht->alist people)))
+
+(defun melpa-stats/packages-by-maintainer ()
+  "Return alist of packages by maintainer."
+  (cl-loop with people = (ht)
+           for package in (melpa-stats/packages)
+           for maintainer = (melpa-stats/package-field '(props maintainer) package)
+           when maintainer
+           do (push package (gethash maintainer people))
+           finally return (ht->alist people)))
+
+(defun melpa-stats/retrieve-json (url)
+  "Return parsed JSON object from URL."
+  (with-current-buffer (url-retrieve-synchronously url)
+    (re-search-forward "\n\n")
+    (prog1 (json-read)
+      (kill-buffer))))
 
 ;;;; Footer
 
