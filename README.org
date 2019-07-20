@@ -55,3 +55,7 @@ Show current package version and download counts for packages by a certain autho
   ;;                  (downloads . 274473)))
 #+END_SRC
 
+* License
+
+GPLv3
+
