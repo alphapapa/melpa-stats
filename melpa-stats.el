@@ -1,3 +1,35 @@
+;;; melpa-stats.el --- MELPA package statistics      -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2019 Adam Porter
+
+;; Author: Adam Porter <adam@alphapapa.net>
+;; URL: https://github.com/alphapapa/melpa-stats
+;; Keywords: packages, MELPA
+;; Package-Requires: ((emacs) (a) (dash) (dash-functional) (s))
+
+;;; Commentary:
+
+;;
+
+;;; License:
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Code:
+
+;;;; Requirements
+
 (require 'json)
 (require 'seq)
 
@@ -5,12 +37,20 @@
 (require 'dash)
 (require 'dash-functional)
 
+;;;; Variables
+
 (defvar melpa/archive-json-url "https://melpa.org/archive.json")
 (defvar melpa/downloads-json-url "https://melpa.org/download_counts.json")
+
 (defvar melpa/packages nil
   "MELPA packages, read from archive.json.")
 (defvar melpa/downloads nil
   "MELPA package downloads, read from download_counts.json.")
+
+;;;; Customization
+
+
+;;;; Commands
 
 (defun melpa/author-package-counts ()
   (interactive)
@@ -33,6 +73,8 @@
     (if (called-interactively-p 'any)
         (pp-display-expression counts "*MELPA Maintainers*")
       counts)))
+
+;;;; Functions
 
 (defun melpa/packages (&optional refresh)
   (when (or refresh (not melpa/packages))
@@ -68,3 +110,9 @@
                        (car))))
     (a-list 'version (melpa/package-field '(ver) package)
             'downloads (a-get (melpa/downloads) package-name))))
+
+;;;; Footer
+
+(provide 'melpa-stats)
+
+;;; melpa-stats.el ends here
