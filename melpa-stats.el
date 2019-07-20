@@ -77,11 +77,13 @@
 ;;;; Functions
 
 (defun melpa/packages (&optional refresh)
+  "Return MELPA package data, read from archive.json."
   (when (or refresh (not melpa/packages))
     (setf melpa/packages (melpa/retrieve-json melpa/archive-json-url)))
   melpa/packages)
 
 (defun melpa/downloads (&optional refresh)
+  "Return MELPA package data, read from download_counts.json"
   (when (or refresh (not melpa/downloads))
     (setf melpa/downloads (melpa/retrieve-json melpa/downloads-json-url)))
   melpa/downloads)
@@ -99,9 +101,19 @@
        (-sort (-on #'> #'cdr))))
 
 (defun melpa/package-field (field package)
+  "Return value of FIELD in PACKAGE data.
+PACKAGE should be a package's data structure as returned by
+`melpa/packages'.  FIELD should be a list of nested map keys as
+expected by `a-get-in' which correspond to the structure of the
+JSON data."
   (a-get-in (cdr package) field))
 
 (defun melpa/package-version-and-downloads (package-name)
+  "Return version and download count for PACKAGE-NAME.
+Returns alist like:
+
+    ((version . [20170909 631])
+     (downloads . 431))"
   (let* ((package-name (cl-typecase package-name
                          (string (intern package-name))
                          (symbol package-name)))

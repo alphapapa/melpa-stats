@@ -1,0 +1,34 @@
+#+TITLE: MELPA stats
+
+This little package provides some easy ways to get stats about MELPA packages.
+
+* Installation
+
+I recommend using =quelpa-use-package=, like this:
+
+#+BEGIN_SRC elisp
+  (use-package melpa-stats
+    :quelpa (melpa-stats :fetcher github :repo "alphapapa/melpa-stats"))
+#+END_SRC
+
+* Usage
+
+** Commands
+
++  =melpa/author-package-counts= :: List authors by number of packages.
++  =melpa/maintainer-package-counts= :: List maintainers by number of packages.
+
+** Functions
+
+These two functions cache the JSON data locally unless called with an argument:
+
++  =melpa/packages= :: Return MELPA package data, read from archive.json.
++  =melpa/downloads= :: Return MELPA package data, read from download_counts.json
+
+These functions return data about individual packages:
+
++  ~melpa/package-version-and-downloads~ :: Return version and download count for ~PACKAGE-NAME~.
+
+These helper functions provide access to package data:
+
++  ~melpa/package-field~ :: Return value of ~FIELD~ in ~PACKAGE~ data.  ~PACKAGE~ should be a package's data structure as returned by ~melpa/packages~.  ~FIELD~ should be a list of nested map keys as expected by ~a-get-in~ which correspond to the structure of the ~JSON~ data.
