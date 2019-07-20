@@ -56,6 +56,8 @@
 ;;;; Commands
 
 (defun melpa-stats/author-package-counts ()
+  "Return list of authors by package count.
+Interactively, display with `pp-display-expression'."
   (interactive)
   (let ((counts (->> (melpa-stats/packages)
                      (--map (melpa-stats/package-field '(props authors) it))
@@ -68,6 +70,8 @@
       counts)))
 
 (defun melpa-stats/maintainer-package-counts ()
+  "Return list of maintainers by package count.
+Interactively, display with `pp-display-expression'."
   (interactive)
   (let ((counts (->> (melpa-stats/packages)
                      (--map (melpa-stats/package-field '(props maintainer) it))
@@ -167,12 +171,17 @@ package is returned."
   melpa-stats/downloads)
 
 (defun melpa-stats/retrieve-json (url)
+  "Return parsed JSON object from URL."
   (with-current-buffer (url-retrieve-synchronously url)
     (re-search-forward "\n\n")
     (prog1 (json-read)
       (kill-buffer))))
 
 (defun melpa-stats/count (fn list)
+  "Return alist of elements of LIST with counts, sorted with `>'.
+LIST is, first, grouped with `seq-group-by' by applying FN to
+each element."
+  ;; FIXME: This can probably be done in a much better way.
   (->> list
        (seq-group-by fn)
        (--map (cons (car it) (length (cdr it))))
