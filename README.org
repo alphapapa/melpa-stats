@@ -1,4 +1,4 @@
-#+TITLE: MELPA stats
+#+TITLE: MELPA Stats
 
 This little package provides some easy ways to get stats about MELPA packages.
 
