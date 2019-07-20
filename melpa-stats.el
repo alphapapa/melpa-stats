@@ -95,10 +95,10 @@ package is returned."
                  (string (list urls))))
          (author-packages (when authors
                             (->> (melpa/packages)
-                                 (--select (let ((package-authors (melpa/package-field '(props authors) it)))
-                                             (cl-loop for pa across package-authors
-                                                      thereis (cl-loop for a in authors
-                                                                       thereis (string-match a pa))))))))
+                                 (--select (cl-loop with package-authors = (melpa/package-field '(props authors) it)
+                                                    for pa across package-authors
+                                                    thereis (cl-loop for a in authors
+                                                                     thereis (string-match a pa)))))))
          (maintainer-packages (when maintainers
                                 (->> (melpa/packages)
                                      (--select (awhen (melpa/package-field '(props maintainer) it)
@@ -109,9 +109,7 @@ package is returned."
                               (--select (awhen (melpa/package-field '(props url) it)
                                           (cl-loop for u in urls
                                                    thereis (string-match u it))))))))
-    (->> (list author-packages maintainer-packages url-packages)
-         (-flatten-n 1)
-         (-uniq))))
+    (-uniq (append author-packages maintainer-packages url-packages))))
 
 (defun melpa/packages (&optional refresh)
   "Return MELPA package data, read from archive.json."
