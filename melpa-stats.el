@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; URL: https://github.com/alphapapa/melpa-stats
 ;; Keywords: packages, MELPA
-;; Package-Requires: ((emacs) (a) (anaphora) (dash) (dash-functional) (s))
+;; Package-Requires: ((emacs) (a) (anaphora) (dash) (dash-functional) (ht) (s))
 
 ;;; Commentary:
 
@@ -38,6 +38,7 @@
 (require 'anaphora)
 (require 'dash)
 (require 'dash-functional)
+(require 'ht)
 
 ;;;; Variables
 
@@ -76,7 +77,49 @@
         (pp-display-expression counts "*MELPA Maintainers*")
       counts)))
 
+(defun melpa/author-maintainer-package-counts ()
+  "List people by number of packages authored or maintained."
+  (interactive)
+  (let* ((people (ht))
+         (counts))
+    (cl-loop for package in (melpa/packages)
+             for authors = (-flatten (seq-into (melpa/package-field '(props authors) package) 'list))
+             when authors
+             do (cl-loop for author in authors
+                         do (push package (gethash author people))))
+    (cl-loop for package in (melpa/packages)
+             for maintainer = (melpa/package-field '(props maintainer) package)
+             when maintainer
+             do (push package (gethash maintainer people)))
+    (setf counts (->> (cl-loop for person being the hash-keys of people
+                               using (hash-values packages)
+                               do (setf packages (-uniq packages))
+                               collect (cons person (length packages)))
+                      (-sort (-on #'> #'cdr))))
+    (if (called-interactively-p 'any)
+        (pp-display-expression counts "*MELPA Authors and Maintainers*")
+      counts)))
+
 ;;;; Functions
+
+(defun melpa/packages-by-author ()
+  "Return alist of packages by author."
+  (cl-loop with people = (ht)
+           for package in (melpa/packages)
+           for authors = (-flatten (seq-into (melpa/package-field '(props authors) package) 'list))
+           when authors
+           do (cl-loop for author in authors
+                       do (push package (gethash author people)))
+           finally return (ht->alist people)))
+
+(defun melpa/packages-by-maintainer ()
+  "Return alist of packages by maintainer."
+  (cl-loop with people = (ht)
+           for package in (melpa/packages)
+           for maintainer = (melpa/package-field '(props maintainer) package)
+           when maintainer
+           do (push package (gethash maintainer people))
+           finally return (ht->alist people)))
 
 (cl-defun melpa/select-packages (&key authors maintainers urls (test-fn #'string-match))
   "Return packages matching AUTHORS, MAINTAINERS, or URLs.
