@@ -31,6 +31,7 @@
 ;;;; Requirements
 
 (require 'json)
+(require 'pp)
 (require 'seq)
 
 (require 'a)
