@@ -15,7 +15,7 @@ I recommend using =quelpa-use-package=, like this:
 
 ** Commands
 
-+  ~melpa-stats/author-maintainer-package-counts~ :: List people by number of packages authored or maintained.
++  ~melpa-stats/author-maintainer-package-counts~ :: Return list of people by number of packages authored or maintained.
 +  ~melpa-stats/author-package-counts~ :: Return list of authors by package count.  Interactively, display with ~pp-display-expression~.
 +  ~melpa-stats/maintainer-package-counts~ :: Return list of maintainers by package count.  Interactively, display with ~pp-display-expression~.
 
