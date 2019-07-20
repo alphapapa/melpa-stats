@@ -5,7 +5,7 @@
 ;; Author: Adam Porter <adam@alphapapa.net>
 ;; URL: https://github.com/alphapapa/melpa-stats
 ;; Keywords: packages, MELPA
-;; Package-Requires: ((emacs) (a) (dash) (dash-functional) (s))
+;; Package-Requires: ((emacs) (a) (anaphora) (dash) (dash-functional) (s))
 
 ;;; Commentary:
 
@@ -35,6 +35,7 @@
 (require 'seq)
 
 (require 'a)
+(require 'anaphora)
 (require 'dash)
 (require 'dash-functional)
 
