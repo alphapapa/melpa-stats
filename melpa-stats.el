@@ -78,6 +78,41 @@
 
 ;;;; Functions
 
+(cl-defun melpa/select-packages (&key authors maintainers urls)
+  "Return packages matching AUTHORS, MAINTAINERS, or URLs.
+Each argument may be one or a list of strings, which is tested
+against the corresponding field in each package in the MELPA
+archive.  If any field matches any argument (boolean OR), the
+package is returned."
+  (let* ((authors (cl-typecase authors
+                    (list authors)
+                    (string (list authors))))
+         (maintainers (cl-typecase maintainers
+                        (list maintainers)
+                        (string (list maintainers))))
+         (urls (cl-typecase urls
+                 (list urls)
+                 (string (list urls))))
+         (author-packages (when authors
+                            (->> (melpa/packages)
+                                 (--select (let ((package-authors (melpa/package-field '(props authors) it)))
+                                             (cl-loop for pa across package-authors
+                                                      thereis (cl-loop for a in authors
+                                                                       thereis (string-match a pa))))))))
+         (maintainer-packages (when maintainers
+                                (->> (melpa/packages)
+                                     (--select (awhen (melpa/package-field '(props maintainer) it)
+                                                 (cl-loop for m in maintainers
+                                                          thereis (string-match m it)))))))
+         (url-packages (when urls
+                         (->> (melpa/packages)
+                              (--select (awhen (melpa/package-field '(props url) it)
+                                          (cl-loop for u in urls
+                                                   thereis (string-match u it))))))))
+    (->> (list author-packages maintainer-packages url-packages)
+         (-flatten-n 1)
+         (-uniq))))
+
 (defun melpa/packages (&optional refresh)
   "Return MELPA package data, read from archive.json."
   (when (or refresh (not melpa/packages))
@@ -110,20 +145,15 @@ expected by `a-get-in' which correspond to the structure of the
 JSON data."
   (a-get-in (cdr package) field))
 
-(defun melpa/package-version-and-downloads (package-name)
-  "Return version and download count for PACKAGE-NAME.
-Returns alist like:
+(defun melpa/package-version-and-downloads (package)
+  "Return version and download count for PACKAGE.
+PACKAGE should be a package data list as returned by
+`melpa/packages'.  Returns an alist like:
 
     ((version . [20170909 631])
      (downloads . 431))"
-  (let* ((package-name (cl-typecase package-name
-                         (string (intern package-name))
-                         (symbol package-name)))
-         (package (->> (melpa/packages)
-                       (--select (equal package-name (car it)))
-                       (car))))
-    (a-list 'version (melpa/package-field '(ver) package)
-            'downloads (a-get (melpa/downloads) package-name))))
+  (a-list 'version (melpa/package-field '(ver) package)
+          'downloads (a-get (melpa/downloads) (car package))))
 
 ;;;; Footer
 

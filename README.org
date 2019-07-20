@@ -25,10 +25,37 @@ These two functions cache the JSON data locally unless called with an argument:
 +  =melpa/packages= :: Return MELPA package data, read from archive.json.
 +  =melpa/downloads= :: Return MELPA package data, read from download_counts.json
 
+These functions select packages:
+
++ =melpa/select-packages= :: Return packages matching ~AUTHORS~, ~MAINTAINERS~, or ~URLs~.  Each argument may be one or a list of strings, which is tested against the corresponding field in each package in the MELPA archive.  If any field matches any argument (boolean OR), the package is returned.
+
 These functions return data about individual packages:
 
-+  ~melpa/package-version-and-downloads~ :: Return version and download count for ~PACKAGE-NAME~.
++  ~melpa/package-version-and-downloads~ :: Return version and download count for ~PACKAGE~.  ~PACKAGE~ should be a package's data structure as returned by ~melpa/packages~. 
 
 These helper functions provide access to package data:
 
 +  ~melpa/package-field~ :: Return value of ~FIELD~ in ~PACKAGE~ data.  ~PACKAGE~ should be a package's data structure as returned by ~melpa/packages~.  ~FIELD~ should be a list of nested map keys as expected by ~a-get-in~ which correspond to the structure of the ~JSON~ data.
+
+** Examples
+
+Show current package version and download counts for packages by a certain author.  This could be useful for recording package download counts over time.
+
+#+BEGIN_SRC elisp
+  (->> (melpa/select-packages :authors "Jonas Bernoulli"
+                              :maintainers "Jonas Bernoulli"
+                              :urls "tarsius")
+       (--map (cons (car it)
+                    (list (cons 'version (melpa/package-field '(ver) it))
+                          (cons 'downloads (alist-get (car it) (melpa/downloads))))))
+       (--sort (alist-get 'downloads (cdr it)))
+       (-take 3))
+  ;; =>
+  ;; ((git-commit (version . [20190717 29])
+  ;;              (downloads . 500506))
+  ;;  (gitattributes-mode (version . [20180318 1956])
+  ;;                      (downloads . 166632))
+  ;;  (gitconfig-mode (version . [20180318 1956])
+  ;;                  (downloads . 274473)))
+#+END_SRC
+
