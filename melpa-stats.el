@@ -78,7 +78,7 @@
 
 ;;;; Functions
 
-(cl-defun melpa/select-packages (&key authors maintainers urls)
+(cl-defun melpa/select-packages (&key authors maintainers urls (test-fn #'string-match))
   "Return packages matching AUTHORS, MAINTAINERS, or URLs.
 Each argument may be one or a list of strings, which is tested
 against the corresponding field in each package in the MELPA
@@ -98,17 +98,17 @@ package is returned."
                                  (--select (cl-loop with package-authors = (melpa/package-field '(props authors) it)
                                                     for pa across package-authors
                                                     thereis (cl-loop for a in authors
-                                                                     thereis (string-match a pa)))))))
+                                                                     thereis (funcall test-fn a pa)))))))
          (maintainer-packages (when maintainers
                                 (->> (melpa/packages)
                                      (--select (awhen (melpa/package-field '(props maintainer) it)
                                                  (cl-loop for m in maintainers
-                                                          thereis (string-match m it)))))))
+                                                          thereis (funcall test-fn m it)))))))
          (url-packages (when urls
                          (->> (melpa/packages)
                               (--select (awhen (melpa/package-field '(props url) it)
                                           (cl-loop for u in urls
-                                                   thereis (string-match u it))))))))
+                                                   thereis (funcall test-fn u it))))))))
     (-uniq (append author-packages maintainer-packages url-packages))))
 
 (defun melpa/packages (&optional refresh)
