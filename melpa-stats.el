@@ -148,7 +148,9 @@ against the names of packages' dependencies."
                                                     (cl-loop for d in depends-on
                                                              thereis (cl-member d it :test test-fn)))
                                           (melpa-stats/packages)))))
-    (-uniq (append author-packages maintainer-packages url-packages depends-on-packages))))
+    (->> (append author-packages maintainer-packages url-packages depends-on-packages)
+         (-sort (-on #'string< (-compose #'symbol-name #'car)))
+         -uniq)))
 
 (defun melpa-stats/count (fn list)
   "Return alist of elements of LIST with counts, sorted with `>'.
