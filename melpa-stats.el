@@ -106,12 +106,14 @@ Interactively, display with `pp-display-expression'."
 
 ;;;; Functions
 
-(cl-defun melpa-stats/select-packages (&key authors maintainers urls (test-fn #'string-match))
-  "Return packages matching AUTHORS, MAINTAINERS, or URLs.
+(cl-defun melpa-stats/select-packages (&key authors maintainers urls depends-on
+                                            (test-fn #'string-match))
+  "Return packages matching AUTHORS, MAINTAINERS, URLS, or DEPENDS-ON.
 Each argument may be one or a list of strings, which is tested
 against the corresponding field in each package in the MELPA
 archive.  If any field matches any argument (boolean OR), the
-package is returned."
+package is returned.  Each of DEPENDS-ON is compared as a string
+against the names of packages' dependencies."
   (let* ((authors (cl-typecase authors
                     (list authors)
                     (string (list authors))))
@@ -121,6 +123,9 @@ package is returned."
          (urls (cl-typecase urls
                  (list urls)
                  (string (list urls))))
+         (depends-on (cl-typecase depends-on
+                       (list depends-on)
+                       (string (list depends-on))))
          (author-packages (when authors
                             (->> (melpa-stats/packages)
                                  (--select (cl-loop with package-authors = (melpa-stats/package-field '(props authors) it)
@@ -136,8 +141,14 @@ package is returned."
                          (->> (melpa-stats/packages)
                               (--select (awhen (melpa-stats/package-field '(props url) it)
                                           (cl-loop for u in urls
-                                                   thereis (funcall test-fn u it))))))))
-    (-uniq (append author-packages maintainer-packages url-packages))))
+                                                   thereis (funcall test-fn u it)))))))
+         (depends-on-packages (when depends-on
+                                (--select (-some--> (melpa-stats/package-field '(deps) it)
+                                                    (--map (->> it car symbol-name) it)
+                                                    (cl-loop for d in depends-on
+                                                             thereis (cl-member d it :test test-fn)))
+                                          (melpa-stats/packages)))))
+    (-uniq (append author-packages maintainer-packages url-packages depends-on-packages))))
 
 (defun melpa-stats/count (fn list)
   "Return alist of elements of LIST with counts, sorted with `>'.

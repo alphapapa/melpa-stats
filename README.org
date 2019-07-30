@@ -31,7 +31,7 @@ I recommend using =quelpa-use-package=, like this:
 +  ~melpa-stats/packages-by-author~ :: Return alist of packages by author.
 +  ~melpa-stats/packages-by-maintainer~ :: Return alist of packages by maintainer.
 +  ~melpa-stats/retrieve-json~ :: ~(URL)~ Return parsed ~JSON~ object from ~URL~.
-+  ~melpa-stats/select-packages~ :: ~(&key AUTHORS MAINTAINERS URLS (TEST-FN #'string-match))~ Return packages matching ~AUTHORS~, ~MAINTAINERS~, or URLs.  Each argument may be one or a list of strings, which is tested against the corresponding field in each package in the ~MELPA~ archive.  If any field matches any argument (boolean ~OR~), the package is returned.
++  ~melpa-stats/select-packages~ :: ~(&key AUTHORS MAINTAINERS URLS DEPENDS-ON (TEST-FN #'string-match))~ Return packages matching ~AUTHORS~, ~MAINTAINERS~, ~URLS~, or ~DEPENDS-ON~.  Each argument may be one or a list of strings, which is tested against the corresponding field in each package in the MELPA archive.  If any field matches any argument (boolean ~OR~), the package is returned.  Each of ~DEPENDS-ON~ is compared as a string against the names of packages' dependencies.
 
 ** Examples
 
@@ -53,6 +53,19 @@ Show current package version and download counts for packages by a certain autho
   ;;                      (downloads . 166632))
   ;;  (gitconfig-mode (version . [20180318 1956])
   ;;                  (downloads . 274473)))
+#+END_SRC
+
+Show packages depending on packages by a certain author:
+
+#+BEGIN_SRC elisp
+  (->> (melpa-stats/select-packages :maintainers "Jonas Bernoulli" :authors "Jonas Bernoulli")
+       (--map (symbol-name (car it)))
+       (--map (melpa-stats/select-packages :depends-on it))
+       (-flatten-n 1)
+       (--map (symbol-name (car it)))
+       -uniq
+       (-sort #'string<))
+  ;;=> ("auto-compile" "backline" "borg" "build-farm" "djangonaut" "docker" ...)
 #+END_SRC
 
 * License
