@@ -113,7 +113,8 @@ Each argument may be one or a list of strings, which is tested
 against the corresponding field in each package in the MELPA
 archive.  If any field matches any argument (boolean OR), the
 package is returned.  Each of DEPENDS-ON is compared as a string
-against the names of packages' dependencies."
+against the names of packages' dependencies using `string=', not
+TEST-FN."
   (let* ((authors (cl-typecase authors
                     (list authors)
                     (string (list authors))))
@@ -146,7 +147,7 @@ against the names of packages' dependencies."
                                 (--select (-some--> (melpa-stats/package-field '(deps) it)
                                                     (--map (->> it car symbol-name) it)
                                                     (cl-loop for d in depends-on
-                                                             thereis (cl-member d it :test test-fn)))
+                                                             thereis (cl-member d it :test #'string=)))
                                           (melpa-stats/packages)))))
     (->> (append author-packages maintainer-packages url-packages depends-on-packages)
          (-sort (-on #'string< (-compose #'symbol-name #'car)))
