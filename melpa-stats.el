@@ -145,9 +145,9 @@ TEST-FN."
                                                    thereis (funcall test-fn u it)))))))
          (depends-on-packages (when depends-on
                                 (--select (-some--> (melpa-stats/package-field '(deps) it)
-                                                    (--map (->> it car symbol-name) it)
-                                                    (cl-loop for d in depends-on
-                                                             thereis (cl-member d it :test #'string=)))
+                                            (--map (->> it car symbol-name) it)
+                                            (cl-loop for d in depends-on
+                                                     thereis (cl-member d it :test #'string=)))
                                           (melpa-stats/packages)))))
     (->> (append author-packages maintainer-packages url-packages depends-on-packages)
          (-sort (-on #'string< (-compose #'symbol-name #'car)))
