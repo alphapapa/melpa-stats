@@ -106,6 +106,31 @@ Interactively, display with `pp-display-expression'."
 
 ;;;; Functions
 
+(defun melpa-stats/by-downloads (key values)
+  "Return list of package downloads for KEY and VALUES.
+e.g. :author and a list of authors."
+  (->> values
+       (--map (cons it (melpa-stats/select-packages key it)))
+       (--map (cons (car it)
+                    (--reduce-from (+ acc (alist-get 'downloads it)) 0
+                                   (--map (melpa-stats/package-version-and-downloads it)
+                                          (cdr it)))))
+       (-sort (-on #'> #'cdr))))
+
+(defun melpa-stats/top-authors-by-downloads (num)
+  "Return list of authors by total downloads."
+  (let ((authors (->> (melpa-stats/author-package-counts)
+                      (-map #'car)
+                      (-take num))))
+    (melpa-stats/by-downloads :authors authors)))
+
+(defun melpa-stats/top-maintainers-by-downloads (num)
+  "Return list of maintainers by total downloads."
+  (let ((maintainers (->> (melpa-stats/author-package-counts)
+                          (-map #'car)
+                          (-take num))))
+    (melpa-stats/by-downloads :maintainers maintainers)))
+
 (cl-defun melpa-stats/select-packages (&key authors maintainers urls depends-on
                                             (test-fn #'string-match))
   "Return packages matching AUTHORS, MAINTAINERS, URLS, or DEPENDS-ON.
